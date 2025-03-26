@@ -15,11 +15,11 @@ public class EnterpriseManager extends JFrame {
         enterprise = new Enterprise();
 
         setTitle("Управление организациями");
-        setSize(600, 400);
+        setSize(700, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        tableModel = new DefaultTableModel(new Object[]{"Название", "Тип", "Местоположение", "Сотрудники"}, 0);
+        tableModel = new DefaultTableModel(new Object[]{"Название", "Тип", "Местоположение", "Сотрудники", "Дополнительно"}, 0);
         table = new JTable(tableModel);
         add(new JScrollPane(table), BorderLayout.CENTER);
 
@@ -45,10 +45,11 @@ public class EnterpriseManager extends JFrame {
         JTextField nameField = new JTextField();
         JTextField locationField = new JTextField();
         JTextField employeesField = new JTextField();
+        JTextField extraField = new JTextField();
         String[] types = {"Судостроительная компания", "Страховая компания", "Авиазавод"};
         JComboBox<String> typeBox = new JComboBox<>(types);
 
-        JPanel panel = new JPanel(new GridLayout(5, 2));
+        JPanel panel = new JPanel(new GridLayout(6, 2));
         panel.add(new JLabel("Название:"));
         panel.add(nameField);
         panel.add(new JLabel("Тип:"));
@@ -57,6 +58,25 @@ public class EnterpriseManager extends JFrame {
         panel.add(locationField);
         panel.add(new JLabel("Сотрудники:"));
         panel.add(employeesField);
+        JLabel extraLabel = new JLabel("Дополнительно:");
+        panel.add(extraLabel);
+        panel.add(extraField);
+
+        // Update extra field label based on selected type
+        typeBox.addActionListener(e -> {
+            String selectedType = (String)typeBox.getSelectedItem();
+            switch(selectedType) {
+                case "Судостроительная компания":
+                    extraLabel.setText("Корабли построено:");
+                    break;
+                case "Страховая компания":
+                    extraLabel.setText("Тип страхования:");
+                    break;
+                case "Авиазавод":
+                    extraLabel.setText("Самолеты произведено:");
+                    break;
+            }
+        });
 
         int result = JOptionPane.showConfirmDialog(this, panel, "Добавить организацию",
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
@@ -80,16 +100,34 @@ public class EnterpriseManager extends JFrame {
 
             Organization org;
             String type = (String)typeBox.getSelectedItem();
+            String extraText = extraField.getText().trim();
 
             switch(type) {
                 case "Судостроительная компания":
-                    org = new ShipbuildingCompany(name, locationField.getText(), employees, 0);
+                    int ships;
+                    try {
+                        ships = extraText.isEmpty() ? 0 : Integer.parseInt(extraText);
+                    } catch (NumberFormatException e) {
+                        JOptionPane.showMessageDialog(this, "Количество кораблей должно быть числом",
+                                "Ошибка ввода", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    org = new ShipbuildingCompany(name, locationField.getText(), employees, ships);
                     break;
                 case "Страховая компания":
-                    org = new InsuranceCompany(name, locationField.getText(), employees, "Не указан");
+                    org = new InsuranceCompany(name, locationField.getText(), employees,
+                            extraText.isEmpty() ? "Не указан" : extraText);
                     break;
                 case "Авиазавод":
-                    org = new AircraftFactory(name, locationField.getText(), employees, 0);
+                    int aircraft;
+                    try {
+                        aircraft = extraText.isEmpty() ? 0 : Integer.parseInt(extraText);
+                    } catch (NumberFormatException e) {
+                        JOptionPane.showMessageDialog(this, "Количество самолетов должно быть числом",
+                                "Ошибка ввода", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    org = new AircraftFactory(name, locationField.getText(), employees, aircraft);
                     break;
                 default:
                     return;
@@ -110,11 +148,12 @@ public class EnterpriseManager extends JFrame {
         JTextField nameField = new JTextField(org.getName());
         JTextField locationField = new JTextField(org.getLocation());
         JTextField employeesField = new JTextField(String.valueOf(org.getEmployees()));
+        JTextField extraField = new JTextField(getExtraValue(org));
         String[] types = {"Судостроительная компания", "Страховая компания", "Авиазавод"};
         JComboBox<String> typeBox = new JComboBox<>(types);
         typeBox.setSelectedItem(getTypeString(org));
 
-        JPanel panel = new JPanel(new GridLayout(5, 2));
+        JPanel panel = new JPanel(new GridLayout(6, 2));
         panel.add(new JLabel("Название:"));
         panel.add(nameField);
         panel.add(new JLabel("Тип:"));
@@ -123,8 +162,12 @@ public class EnterpriseManager extends JFrame {
         panel.add(locationField);
         panel.add(new JLabel("Сотрудники:"));
         panel.add(employeesField);
+        JLabel extraLabel = new JLabel(getExtraLabel(org));
+        panel.add(extraLabel);
+        panel.add(extraField);
 
-        int result = JOptionPane.showConfirmDialog(this, panel, "Редактировать организацию", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        int result = JOptionPane.showConfirmDialog(this, panel, "Редактировать организацию",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (result == JOptionPane.OK_OPTION) {
             String name = nameField.getText().trim();
             if (name.isEmpty()) {
@@ -143,9 +186,32 @@ public class EnterpriseManager extends JFrame {
                 return;
             }
 
+            String extraText = extraField.getText().trim();
             org.setName(name);
             org.setLocation(locationField.getText());
             org.setEmployees(employees);
+
+            if (org instanceof ShipbuildingCompany) {
+                try {
+                    int ships = extraText.isEmpty() ? 0 : Integer.parseInt(extraText);
+                    ((ShipbuildingCompany) org).setNumberOfShipsBuilt(ships);
+                } catch (NumberFormatException e) {
+                    JOptionPane.showMessageDialog(this, "Количество кораблей должно быть числом",
+                            "Ошибка ввода", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            } else if (org instanceof InsuranceCompany) {
+                ((InsuranceCompany) org).setInsuranceType(extraText.isEmpty() ? "Не указан" : extraText);
+            } else if (org instanceof AircraftFactory) {
+                try {
+                    int aircraft = extraText.isEmpty() ? 0 : Integer.parseInt(extraText);
+                    ((AircraftFactory) org).setAircraftProduced(aircraft);
+                } catch (NumberFormatException e) {
+                    JOptionPane.showMessageDialog(this, "Количество самолетов должно быть числом",
+                            "Ошибка ввода", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            }
             updateTable();
         }
     }
@@ -174,15 +240,15 @@ public class EnterpriseManager extends JFrame {
         panel.add(new JLabel("Местоположение:"));
         panel.add(locationField);
 
-        int result = JOptionPane.showConfirmDialog(this, panel, "Поиск организаций", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        int result = JOptionPane.showConfirmDialog(this, panel, "Поиск организаций",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (result == JOptionPane.OK_OPTION) {
             searchOrganizations(nameField.getText(), (String)typeBox.getSelectedItem(), locationField.getText());
         }
     }
 
     private void searchOrganizations(String name, String type, String location) {
-        tableModel.setRowCount(0); // Clear table
-
+        tableModel.setRowCount(0);
         for (Organization org : enterprise.getOrganizations()) {
             boolean matches = name.isEmpty() || org.getName().contains(name);
 
@@ -196,7 +262,7 @@ public class EnterpriseManager extends JFrame {
 
             if (matches) {
                 tableModel.addRow(new Object[]{org.getName(), getTypeString(org),
-                        org.getLocation(), org.getEmployees()});
+                        org.getLocation(), org.getEmployees(), getExtraValue(org)});
             }
         }
     }
@@ -208,11 +274,25 @@ public class EnterpriseManager extends JFrame {
         return "";
     }
 
+    private String getExtraValue(Organization org) {
+        if (org instanceof ShipbuildingCompany) return String.valueOf(((ShipbuildingCompany) org).getNumberOfShipsBuilt());
+        if (org instanceof InsuranceCompany) return ((InsuranceCompany) org).getInsuranceType();
+        if (org instanceof AircraftFactory) return String.valueOf(((AircraftFactory) org).getAircraftProduced());
+        return "";
+    }
+
+    private String getExtraLabel(Organization org) {
+        if (org instanceof ShipbuildingCompany) return "Корабли построено:";
+        if (org instanceof InsuranceCompany) return "Тип страхования:";
+        if (org instanceof AircraftFactory) return "Самолеты произведено:";
+        return "Дополнительно:";
+    }
+
     private void updateTable() {
         tableModel.setRowCount(0);
         for (Organization org : enterprise.getOrganizations()) {
             tableModel.addRow(new Object[]{org.getName(), getTypeString(org),
-                    org.getLocation(), org.getEmployees()});
+                    org.getLocation(), org.getEmployees(), getExtraValue(org)});
         }
     }
 
