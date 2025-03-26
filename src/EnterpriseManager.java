@@ -58,7 +58,7 @@ public class EnterpriseManager extends JFrame {
         panel.add(locationField);
         panel.add(new JLabel("Сотрудники:"));
         panel.add(employeesField);
-        JLabel extraLabel = new JLabel("Дополнительно:");
+        JLabel extraLabel = new JLabel("Кораблей построено:");
         panel.add(extraLabel);
         panel.add(extraField);
 
@@ -67,13 +67,13 @@ public class EnterpriseManager extends JFrame {
             String selectedType = (String)typeBox.getSelectedItem();
             switch(selectedType) {
                 case "Судостроительная компания":
-                    extraLabel.setText("Корабли построено:");
+                    extraLabel.setText("Кораблей построено:");
                     break;
                 case "Страховая компания":
                     extraLabel.setText("Тип страхования:");
                     break;
                 case "Авиазавод":
-                    extraLabel.setText("Самолеты произведено:");
+                    extraLabel.setText("Самолётов произведено:");
                     break;
             }
         });
@@ -229,7 +229,7 @@ public class EnterpriseManager extends JFrame {
     private void showSearchDialog() {
         JPanel panel = new JPanel(new GridLayout(5, 2));
         JTextField nameField = new JTextField();
-        String[] types = {"Все", "Судостроительная компания", "Страховая компания", "Авиазавод"};
+        String[] types = {"Любой", "Судостроительная компания", "Страховая компания", "Авиазавод"};
         JComboBox<String> typeBox = new JComboBox<>(types);
         JTextField locationField = new JTextField();
 
@@ -252,7 +252,7 @@ public class EnterpriseManager extends JFrame {
         for (Organization org : enterprise.getOrganizations()) {
             boolean matches = name.isEmpty() || org.getName().contains(name);
 
-            if (!type.equals("Все") && !getTypeString(org).equals(type)) {
+            if (!type.equals("Любой") && !getTypeString(org).equals(type)) {
                 matches = false;
             }
 
@@ -282,9 +282,9 @@ public class EnterpriseManager extends JFrame {
     }
 
     private String getExtraLabel(Organization org) {
-        if (org instanceof ShipbuildingCompany) return "Корабли построено:";
+        if (org instanceof ShipbuildingCompany) return "Кораблей построено:";
         if (org instanceof InsuranceCompany) return "Тип страхования:";
-        if (org instanceof AircraftFactory) return "Самолеты произведено:";
+        if (org instanceof AircraftFactory) return "Самолётов произведено:";
         return "Дополнительно:";
     }
 
